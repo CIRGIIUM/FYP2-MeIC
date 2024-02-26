@@ -1,17 +1,19 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, redirect
 from keras.preprocessing.image import load_img, img_to_array
 from keras.applications.vgg16 import preprocess_input
 from keras.models import load_model
+import tensorflow_privacy
 
 app = Flask(__name__)
 
 
+
 #map datasets to model paths
 model_paths = {
-    'cataract': 'models/cataract.h5',
-    'leukemia': 'models/leukemia.h5',
-    'pneumonia': 'models/pneumonia.h5',
-    'skincancer': 'models/skincancer.h5'
+    'cataract': 'models/dp_cataract.h5',
+    'leukemia': 'models/dp_leukemia.h5',
+    'pneumonia': 'models/dp_pneumonia.h5',
+    'skincancer': 'models/dp_skincancer.h5'
 }
 
 #class labels
@@ -21,6 +23,10 @@ class_labels = {
     'pneumonia': ['Normal', 'Pneumonia'],
     'skincancer': ['Skincancer(Benign)', 'Skincancer(Malignant)', 'Skincancer(Vascular)', 'Skincancer(Dermatofibroma)'] 
 }
+
+@app.route('/')
+def redirect_to_meic():
+    return redirect('/MeIC')
 
 @app.route('/MeIC', methods=['GET'])
 def home():
@@ -38,6 +44,7 @@ def predict():
     class_label = class_labels[dataset]
     
     model = load_model(model_path)
+    
 
     image_path = "./images/" + imagefile.filename
     imagefile.save(image_path)
@@ -65,4 +72,4 @@ def about():
     return render_template('about.html')
 
 if __name__ == '__main__':
-    app.run(port=3000, debug=True)
+    app.run(port=5003, debug=True)
