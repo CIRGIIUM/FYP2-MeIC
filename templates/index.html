@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="with=device-width, initial-scale=1.0">
+    <title>Medical Image Classification</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+</head>
+
+<body>
+<section class="header">
+        <nav>
+            <a href="MeIC" class="logo-container">
+                <img src="{{ url_for('static', filename='images/logo.png') }}">
+                <span class="web-name">MeIC</span>
+            </a>
+
+            <div class="nav-links">
+                <ul>
+                    <li><a href="">HOME</a></li>
+                    <li><a href="" id="tryNow">TRY NOW</a></li>
+                    <li><a href="{{ url_for('about') }}">ABOUT</a></li>
+                </ul>
+            </div>
+        </nav>
+
+<div class="welcome-text">
+            <h1>MEDICAL IMAGE CLASSIFIER</h1>
+            <p>We can classify medical images such as X-rays, MRIs and CT scans. We utilize deep learning 
+                algorithms and large image datasets to train the model and achieve high accuracy. This website can be 
+                used by healthcare professionals or medical students to quickly and efficiently diagnose conditions 
+                diseases. Currently our website can be used to diagnose 4 types of diseases which are Cataract, Leukemia, Pneumonia 
+                and Skincancer.
+            </p>
+            
+            <div class="image-row">
+                <img src="{{ url_for('static', filename='images/sdg3.png') }}" alt="Image 1">
+                <img src="{{ url_for('static', filename='images/sdg4.png') }}" alt="Image 2">
+            </div>
+
+            <a href="" class="hero-btn" id="show">DIAGNOSE DISEASE</a>
+</div>
+</section>
+
+<section class="classify" id="classifySection">
+    <div class="choosedataset">
+        <label for="datasetSelect">Choose a dataset:</label>
+            <select id="datasetSelect">
+                <option value=" "> </option>
+                <option value="cataract">Cataract</option>
+                <option value="leukemia">Leukemia</option>
+                <option value="pneumonia">Pneumonia</option>
+                <option value="skincancer">Skincancer</option>
+            </select>
+    </div>
+    
+    <div class="container">
+        <input type="file" id="imagefile" accept="image/*" style="display: none;">
+        <div class="img-area" data-img="">
+            <i class='bx bxs-cloud-upload icon'></i>
+            <h3>Upload Image</h3>
+            <p>Image size must be less than <span>2MB</span></p>
+        </div>
+        <button class="selectImage" onclick="document.getElementById('imagefile').click();">Upload Image</button>
+        <div class="upload-status" style="display: none;">Image uploaded successfully!</div>
+    </div>
+    
+    <br><br>
+    <button class="predictimage" style="display: none;" onclick="predictImage()">Classify Image</button>
+    <progress value="0" max="100" id="progressBar"></progress>
+    <div id="uploadPercentage"></div>
+    
+    <br>
+    <div class="result-container">
+        <div class="result">
+            <h2>Result Section</h2>
+        </div>
+        <div id="prediction"></div>
+        <button class="refreshButton" style="display: none;" onclick="redirectToIndex()">Refresh</button>
+    <br>
+    </div>
+    
+</section>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const showClassifyButton = document.getElementById('show');
+        const classifySection = document.getElementById('classifySection');
+
+        showClassifyButton.addEventListener('click', function(event) {
+            event.preventDefault();
+            classifySection.style.display = 'flex';
+            classifySection.scrollIntoView({ behavior: 'smooth' });
+        });
+    });
+
+    function predictImage() {
+        var fileInput = document.getElementById('imagefile');
+        var file = fileInput.files[0];
+        var datasetSelect = document.getElementById('datasetSelect');
+        var dataset = datasetSelect.value;
+
+        if (file) {
+            var formData = new FormData();
+            formData.append('imagefile', file);
+            formData.append('dataset', dataset);
+
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/', true);
+
+            xhr.upload.addEventListener('progress', function(event) {
+                if (event.lengthComputable) {
+                    var percentage = (event.loaded / event.total) * 100;
+                    document.getElementById('progressBar').value = percentage;
+                    document.getElementById('uploadPercentage').innerHTML = percentage.toFixed(2) + '% uploaded';
+                }
+            });
+
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    var response = JSON.parse(xhr.responseText);
+                    simulateProcessing(response);
+                } else {
+                    console.log('Error during prediction');
+                }
+            };
+
+            xhr.send(formData);
+        }
+    }
+
+    function simulateProcessing(response) {
+        var progress = 0;
+        var interval = setInterval(function() {
+            if (progress < 100) {
+                progress += 10; 
+                document.getElementById('progressBar').value = progress;
+                document.getElementById('uploadPercentage').innerHTML = progress.toFixed(2) + '% processed';
+            } else {
+                clearInterval(interval);
+                document.getElementById('progressBar').value = 100;
+                document.getElementById('uploadPercentage').innerHTML = 'Classification completed';
+                document.getElementById('prediction').textContent = "Predicted Disease: " + response.prediction;
+                document.querySelector('.refreshButton').style.display = 'block';
+            }
+        }, 1000); 
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const imageFile = document.getElementById('imagefile');
+        const imgArea = document.querySelector('.img-area');
+        const uploadStatus = document.querySelector('.upload-status');
+        const predictButton = document.querySelector('.predictimage');
+        const tryNow = document.getElementById('tryNow');
+        const datasetSelect = document.getElementById('datasetSelect');
+
+        imageFile.addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    imgArea.innerHTML = `<img src="${event.target.result}" alt="Uploaded Image">`;
+                    uploadStatus.style.display = 'block'; 
+                    predictButton.style.display = 'block'; 
+                };
+                reader.readAsDataURL(file);
+            } else {
+                imgArea.innerHTML = `<i class='bx bxs-cloud-upload icon'></i>
+                                    <h3>Upload Image</h3>
+                                    <p>Image size must be less than <span>2MB</span></p>`;
+                uploadStatus.style.display = 'none';
+                predictButton.style.display = 'none';
+            }
+        });
+
+        tryNow.addEventListener('click', function(event) {
+            event.preventDefault();
+            classifySection.style.display = 'flex';
+            classifySection.scrollIntoView({ behavior: 'smooth' });
+        });
+
+        predictButton.addEventListener('click', function(event) {
+            event.preventDefault();
+            const fileInput = document.getElementById('imagefile');
+        });
+    });
+
+    function redirectToIndex() {
+        window.location.href = '/MeIC';
+    }
+
+</script>
+
+</body>
+</html>
